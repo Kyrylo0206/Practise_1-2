@@ -1,0 +1,237 @@
+= Practice 1 – Initial Architecture
+
+== Lesson Goals
+
+This practice session consolidates knowledge of architectural patterns and approaches required for:
+
+- Designing a modular monolith
+- Gradually evolving a monolith into microservices
+- Applying *Domain-Driven Design (DDD)* and *Clean Architecture* principles in real systems
+
+The focus is on *reasoning about architecture*, not on frameworks or infrastructure.
+
+== Grading
+
+- Task 1, Task 2 – 5 points  
+- Task 3 – 5 points  
+
+*Extra:*  
+Providing additional analysis of architectural patterns, DDD concepts, and Clean Architecture principles used in the applications – **3 points**
+
+== Case
+
+=== Overview
+
+When building a new application, teams often jump directly into advanced frameworks, microservices, and infrastructure-heavy solutions. This usually happens at the moment when we understand the business domain the least.
+
+This leads to poor early decisions that are expensive to change later.
+
+Typical outcomes include:
+
+- A *big ball of mud*
+- A *big ball of distributed mud*
+
+Instead, this practice follows a different approach:
+
+**Start with the simplest possible architecture that clearly models the business domain.**
+
+At the beginning, we intentionally avoid:
+
+- Microservices
+- Distributed transactions
+- Message brokers
+- Caching layers
+- Heavy container orchestration
+
+This allows us to:
+
+- Delay irreversible architectural decisions
+- Keep business logic understandable
+- Reduce cognitive load for new developers
+- Maintain a clean and adaptable codebase
+
+This practice is about *intentional simplicity*.
+
+=== Requirements
+
+- .NET SDK
+- Docker
+
+=== How to Get the .NET SDK
+
+Download the .NET SDK from the official Microsoft website:
+
+link:https://dotnet.microsoft.com/en-us/download[https://dotnet.microsoft.com/en-us/download]
+
+=== How to Run Integration Tests
+
+[source,shell]
+----
+dotnet test
+----
+
+You can also use your IDE’s test explorer.
+
+Integration tests are written using **xUnit** and rely on **Testcontainers** to run PostgreSQL inside Docker.
+
+Make sure Docker is running before executing the tests.
+
+=== Task 1 – Clone Repositories
+
+Clone the following repositories:
+
+. https://github.com/mmorozm/FinnetApp.git
+. https://github.com/mmorozm/Modulith.git
+
+=== Task 2 – Compile and Run the Solutions
+
+==== Prerequisites
+
+- .NET 8.0 SDK
+- .NET 10.0 SDK (latest preview)
+- Docker Desktop
+
+Notes:
+
+- **Modulith** runs on .NET 8.0
+- **Finnet** uses the latest .NET SDK and **.NET Aspire** for local development
+
+=== Task 3 – Architecture & Design Analysis
+
+Analyze both applications from the perspective of:
+
+- Modular design
+- Domain-Driven Design
+- Clean Architecture
+
+You must provide **diagrams** and **written analysis**.
+
+== Architecture Expectations
+
+=== Clean Architecture Alignment
+
+When analyzing the applications, identify the following layers:
+
+[source,text]
+----
+┌─────────────────────────────┐
+│        Presentation         │
+│  (Web API, Controllers)     │
+└─────────────▲───────────────┘
+              │
+┌─────────────┴───────────────┐
+│        Application          │
+│  (Use Cases, Services)      │
+└─────────────▲───────────────┘
+              │
+┌─────────────┴───────────────┐
+│           Domain            │
+│  (Entities, Value Objects,  │
+│   Aggregates, Domain Logic) │
+└─────────────▲───────────────┘
+              │
+┌─────────────┴───────────────┐
+│        Infrastructure       │
+│  (EF Core, DB, External     │
+│   APIs, Messaging)          │
+└─────────────────────────────┘
+----
+
+Key rules to verify:
+
+- Domain layer has **no dependencies** on infrastructure
+- Application layer depends only on Domain
+- Infrastructure depends inward, never outward
+- Controllers contain no business logic
+
+=== Domain-Driven Design (DDD) Expectations
+
+Identify and describe:
+
+- **Bounded Contexts**
+- **Aggregates and Aggregate Roots**
+- **Entities vs Value Objects**
+- **Repositories (interfaces vs implementations)**
+- **Domain Services (if any)**
+
+Ask questions such as:
+
+- Are boundaries explicit or implicit?
+- Is business logic leaking into infrastructure or controllers?
+- Are aggregates properly protected from invalid state?
+
+=== Modular (Modulith) Diagram Example
+
+This is an example of a *logical module-level diagram* for a modular monolith.
+
+[source,text]
+----
+┌──────────────────────────────────────────────┐
+│                 Application                  │
+│                                              │
+│  ┌─────────────┐   ┌─────────────┐           │
+│  │   Identity  │   │   Billing   │           │
+│  │   Module    │   │   Module    │           │
+│  └──────▲──────┘   └──────▲──────┘           │
+│         │                 │                  │
+│  ┌──────┴──────┐   ┌──────┴──────┐           │
+│  │   Orders    │   │  Payments   │           │
+│  │   Module    │   │   Module    │           │
+│  └─────────────┘   └─────────────┘           │
+│                                              │
+└──────────────────────────────────────────────┘
+----
+
+Rules to evaluate:
+
+- Modules communicate through **explicit contracts**
+- No circular dependencies between modules
+- Modules can be extracted into microservices later
+
+=== Module Internal Structure Example
+
+Each module should internally follow Clean Architecture:
+
+[source,text]
+----
+Orders.Module
+├── Orders.Domain
+│   ├── Order.cs
+│   ├── OrderItem.cs
+│   ├── OrderStatus.cs
+│
+├── Orders.Application
+│   ├── CreateOrderCommand.cs
+│   ├── CancelOrderCommand.cs
+│   ├── OrderService.cs
+│
+├── Orders.Infrastructure
+│   ├── OrderRepository.cs
+│   ├── OrdersDbContext.cs
+│
+└── Orders.Api
+    ├── OrdersController.cs
+----
+
+=== What You Must Deliver
+
+For **each application**:
+
+1. A **high-level module diagram**
+2. At least **one module deep-dive diagram**
+3. A written explanation covering:
+   - DDD concepts found or missing
+   - Clean Architecture compliance
+   - Architectural smells or risks
+   - What would block future microservice extraction
+
+Extra points are awarded for:
+
+- Explicit identification of *bounded contexts*
+- Clear separation of *domain logic from infrastructure*
+- Thoughtful critique (not just description)
+
+== Final Notes
+
+This practice is not about finding the *perfect architecture*.  
+It is about developing the skill of **architectural reasoning** and making decisions that can evolve over time.

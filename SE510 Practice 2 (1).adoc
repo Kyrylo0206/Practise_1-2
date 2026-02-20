@@ -1,0 +1,211 @@
+= Practice 2 – Module Separation
+
+== Lesson Goals
+
+This practice introduces the basics of modularization in a backend application.
+
+By completing it, you will learn how to:
+
+Identify a simple business module in a monolith
+Separate that module into its own project
+Apply basic Clean Architecture rules
+Prepare the code for future growth (without building microservices yet)
+
+This is not a microservices implementation task.
+The goal is to practice clean boundaries and good structure.
+
+== Grading
+
+Maximum score: 10 points
+
+Task 1 – Identify the Module – 3 points::
+
+Module is clearly named and described
+Responsibilities are understandable
+Data ownership is identified
+
+Task 2 – Extract the Module – 5 points::
+
+Module moved into separate projects
+Basic Clean Architecture layering applied
+Application still builds and runs
+
+Task 3 – Basic Contract & Extraction Idea – 2 points::
+
+Simple public entry point for the module
+Short explanation of how it could become a microservice later
+
+== Case
+
+The application started as a small MVP with everything inside one project.
+
+Over time:
+
+New features were added
+The codebase grew
+Different parts of the system started to feel “unrelated”
+Changes in one area sometimes affected another
+
+To keep the system understandable, the team decides to start separating the code into modules.
+
+Each module represents one business area and owns its own logic and data.
+The starting codebase for this practice is:
+
+https://github.com/mmorozm/FinnetApp.git
+
+== Preconditions
+
+Clone the repository:
+
+[source,bash]
+git clone https://github.com/mmorozm/FinnetApp.git
+
+Open the solution from:
+Chapter-1-initial-architecture/
+This is the monolith you will refactor.
+
+== Practice Overview
+
+You will:
+
+Choose one simple business module
+Move it into its own folder and projects
+Apply basic layering (Domain, Application, Infrastructure)
+Explain how this module could be extracted later
+
+IMPORTANT:
+You are not expected to refactor the whole system.
+Focus on one module only.
+
+== Task 1 – Identify the Module (3 points)
+
+Choose ONE module that is easy to understand.
+
+Avoid very complex areas if you are unsure.
+
+=== What to Do
+
+Create a short description that explains:
+
+Module name
+What the module is responsible for
+What it is not responsible for
+What data belongs to this module
+
+You do not need deep DDD knowledge here.
+
+=== Deliverable
+
+docs/practice2/bounded-context.adoc
+
+Keep it short (½–1 page).
+
+== Task 2 – Extract the Module (5 points)
+
+Create a folder for your module with a simple Clean Architecture structure:
+
+src/Modules/<ModuleName>/<ModuleName>.Domain
+
+src/Modules/<ModuleName>/<ModuleName>.Application
+
+src/Modules/<ModuleName>/<ModuleName>.Infrastructure
+
+(Optional, if needed)
+
+src/Modules/<ModuleName>/<ModuleName>.Presentation
+
+=== Basic Rules (Simplified)
+
+Domain:
+
+Entities
+Simple business logic
+No dependencies on other projects
+
+Application:
+
+Use cases / services
+Interfaces (repositories, services)
+Depends on Domain only
+
+Infrastructure:
+
+Database or external service implementation
+Depends on Application and Domain
+
+You do not need:
+
+CQRS
+Event sourcing
+Message brokers
+
+Just keep dependencies clean.
+
+=== Acceptance Criteria
+
+The solution builds successfully
+The module logic is no longer in the main project
+No other module directly uses the module’s entities
+
+== Task 3 – Public Entry Point & Future Extraction (2 points)
+
+=== Part A – Public Entry Point
+
+Expose the module using one simple approach:
+A single application service (facade), for example:
+
+ICustomerService
+INotificationService
+
+Other parts of the system should use this service, not internal classes.
+
+=== Part B – Future Extraction Idea
+
+Write a short explanation (bullet points are fine):
+
+What would be the API of this module?
+What data would it own?
+How would other modules talk to it?
+
+No code is required.
+
+=== Deliverable
+
+docs/practice2/microservice-extraction-plan.adoc
+
+Keep it short (½ page).
+
+== Required Diagram (Optional but Recommended)
+
+One simple diagram showing the module separation.
+
+Example:
+
+[plantuml]
+@startuml
+package "Application" {
+[Main API] --> [<ModuleName>.Application]
+[<ModuleName>.Application] --> [<ModuleName>.Domain]
+[<ModuleName>.Infrastructure] ..> [<ModuleName>.Application]
+}
+@enduml
+
+Hand-drawn diagrams or screenshots are also acceptable.
+
+== Submission
+
+Create a branch:
+practice/2-modules-separation
+
+Include:
+
+docs/practice2/bounded-context.adoc
+docs/practice2/microservice-extraction-plan.adoc
+
+== Hints
+
+Smaller is better than perfect
+If unsure, keep logic simple and readable
+Focus on structure, not advanced patterns
+
+If the code builds and responsibilities are clear — you are doing it right
