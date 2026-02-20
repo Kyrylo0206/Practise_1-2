@@ -1,0 +1,33 @@
+graph TB
+    subgraph "Modulith Application"
+        WebApi[WebApi<br/>Presentation Layer]
+        SharedKernel[SharedKernel<br/>Common DDD Interfaces]
+        
+        subgraph Contracts["Module Contracts (Explicit APIs)"]
+            ProductsContracts[Products.Contracts]
+            OrdersContracts[Orders.Contracts]
+            UsersContracts[Users.Contracts]
+            BasketsContracts[Baskets.Contracts]
+        end
+        
+        subgraph Modules["Business Modules"]
+            Products[Products Module]
+            Orders[Orders Module]
+            Users[Users Module]
+            Baskets[Baskets Module]
+        end
+        
+        Infrastructure[Infrastructure Layer<br/>EF Core, DbContexts per Module]
+        
+        WebApi --> Contracts
+        Contracts --> Modules
+        Modules --> Infrastructure
+        WebApi -.depends on.-> SharedKernel
+        Modules -.depends on.-> SharedKernel
+    end
+    
+    style WebApi fill:#e1f5ff
+    style SharedKernel fill:#fff4e1
+    style Infrastructure fill:#ffe1e1
+    style Modules fill:#e1ffe1
+    style Contracts fill:#f0e1ff

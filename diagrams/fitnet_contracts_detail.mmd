@@ -1,0 +1,83 @@
+graph TB
+    subgraph "Contracts Module (Bounded Context)"
+        subgraph API["API Layer (Endpoints)"]
+            PrepareEndpoint[PrepareContractEndpoint]
+            SignEndpoint[SignContractEndpoint]
+            ContractsEndpoints[ContractsEndpoints<br/>Registration]
+        end
+        
+        subgraph PrepareSlice["PrepareContract/ (Vertical Slice)"]
+            PrepareReq[PrepareContractRequest]
+            PrepareVal[PrepareContractRequestValidator]
+            PrepareEP[PrepareContractEndpoint]
+            
+            subgraph PrepareRules["BusinessRules/"]
+                AdultRule[ContractCanBePreparedOnlyForAdultRule]
+                PrevRule[PreviousContractHasToBeSignedRule]
+                HeightRule[CustomerMustBeSmallerThanMaxHeightLimitRule]
+            end
+        end
+        
+        subgraph SignSlice["SignContract/ (Vertical Slice)"]
+            SignReq[SignContractRequest]
+            SignVal[SignContractRequestValidator]
+            SignEP[SignContractEndpoint]
+            
+            subgraph SignRules["BusinessRules/"]
+                DaysRule[ContractCanOnlyBeSignedWithin30DaysFromPreparation]
+            end
+            
+            subgraph SignEvents["Events/"]
+                ContractSigned[ContractSignedEvent]
+            end
+        end
+        
+        subgraph DomainLayer["Domain Layer (Data/)"]
+            ContractAgg["Contract (Aggregate Root)<br/>Rich Domain Model"]
+            
+            subgraph ContractMethods["Domain Methods"]
+                PrepareMethod["+ Prepare(...)<br/>Static Factory Method"]
+                SignMethod["+ Sign(...)<br/>Domain Logic"]
+                Validation[ Business Rule Validation"]
+            end
+        end
+        
+        subgraph InfraLayer["Infrastructure Layer (Data/Database/)"]
+            DbContext[ContractsPersistence<br/>DbContext]
+            EntityConfig[ContractEntityConfiguration]
+            Migrations[Migrations/]
+            DbModule[DatabaseModule<br/>DI Registration]
+        end
+        
+        API --> PrepareSlice
+        API --> SignSlice
+        
+        PrepareSlice --> DomainLayer
+        SignSlice --> DomainLayer
+        
+        DomainLayer --> InfraLayer
+        
+        PrepareMethod -.validates.-> PrepareRules
+        SignMethod -.validates.-> SignRules
+        SignMethod -.publishes.-> SignEvents
+        
+        ContractAgg --> ContractMethods
+    end
+    
+    subgraph External["External Communication"]
+        EventBus[In-Memory Event Bus]
+        PassesModule[Passes Module]
+    end
+    
+    ContractSigned --> EventBus
+    EventBus --> PassesModule
+    
+    style API fill:#e1f5ff
+    style PrepareSlice fill:#e1ffe1
+    style SignSlice fill:#e1ffe1
+    style DomainLayer fill:#fff4e1
+    style InfraLayer fill:#ffe1e1
+    style PrepareRules fill:#ffd4d4
+    style SignRules fill:#ffd4d4
+    style SignEvents fill:#d4e1ff
+    style ContractMethods fill:#ffffcc

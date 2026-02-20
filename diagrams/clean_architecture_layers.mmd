@@ -1,0 +1,39 @@
+graph LR
+    subgraph "Clean Architecture Layers"
+        Presentation["Presentation<br/>API, Controllers, Endpoints"]
+        Application[" Application<br/>Use Cases, Commands, Services"]
+        Domain["Domain<br/>Entities, Aggregates, Value Objects<br/>Business Rules, Domain Events"]
+        Infrastructure["Infrastructure<br/>EF Core, Database, External APIs<br/>Message Brokers"]
+    end
+    
+    Presentation --> Application
+    Application --> Domain
+    Infrastructure --> Domain
+    
+    style Presentation fill:#e1f5ff
+    style Application fill:#e1ffe1
+    style Domain fill:#fff4e1
+    style Infrastructure fill:#ffe1e1
+    
+    subgraph Dependencies["Dependency Flow"]
+        direction TB
+        A[Outer Layers] -->|depend on| B[Inner Layers]
+        B -.->|NEVER| A
+    end
+    
+    subgraph ModulithMapping["Modulith Mapping"]
+        M1["Endpoints → Presentation"]
+        M2["UseCases → Application"]
+        M3["Domain → Domain"]
+        M4["Infrastructure/Data → Infrastructure"]
+    end
+    
+    subgraph FitnetMapping["Fitnet Mapping"]
+        F1["*Endpoint.cs → Presentation"]
+        F2["PrepareContract/, SignContract/ → Application"]
+        F3["Data/Contract.cs → Domain"]
+        F4["Data/Database/ → Infrastructure"]
+    end
+    
+    style ModulithMapping fill:#e8f4f8
+    style FitnetMapping fill:#f0f8e8

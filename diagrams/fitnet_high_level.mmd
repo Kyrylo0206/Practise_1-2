@@ -1,0 +1,61 @@
+graph TB
+    subgraph "Fitnet Application (Single Project)"
+        Program[Program.cs<br/>Application Entry Point]
+        
+        subgraph ModuleReg["Module Registration"]
+            ContractsReg[ContractsModule]
+            OffersReg[OffersModule]
+            PassesReg[PassesModule]
+            ReportsReg[ReportsModule]
+        end
+        
+        subgraph ContractsBC["Contracts Module (Bounded Context)"]
+            PrepareContract[PrepareContract/<br/>Vertical Slice]
+            SignContract[SignContract/<br/>Vertical Slice]
+            ContractsData[Data/<br/>Contract Entity + Database]
+        end
+        
+        subgraph OffersBC["Offers Module (Bounded Context)"]
+            PrepareOffer[Prepare/<br/>Vertical Slice]
+            OffersData[Data/<br/>Offer Entity + Database]
+        end
+        
+        subgraph PassesBC["Passes Module (Bounded Context)"]
+            PassesLogic[Pass Management]
+            PassesData[Data/<br/>Pass Entity + Database]
+        end
+        
+        subgraph ReportsBC["Reports Module (Bounded Context)"]
+            ReportsLogic[Reporting Logic]
+            ReportsData[Data/<br/>Database]
+        end
+        
+        subgraph Common["Common (Shared Utilities)"]
+            BizRules[BusinessRulesEngine]
+            EventBus[EventsPublisher<br/>In-Memory Event Bus]
+        end
+        
+        Program --> ModuleReg
+        ModuleReg --> ContractsBC
+        ModuleReg --> OffersBC
+        ModuleReg --> PassesBC
+        ModuleReg --> ReportsBC
+        
+        ContractsBC -.events.-> EventBus
+        OffersBC -.events.-> EventBus
+        PassesBC -.events.-> EventBus
+        
+        ContractsBC -.uses.-> BizRules
+        OffersBC -.uses.-> BizRules
+    end
+    
+    EventBus -.subscribes.-> PassesBC
+    EventBus -.subscribes.-> OffersBC
+    
+    style Program fill:#e1f5ff
+    style ModuleReg fill:#f0e1ff
+    style ContractsBC fill:#e1ffe1
+    style OffersBC fill:#e1ffe1
+    style PassesBC fill:#e1ffe1
+    style ReportsBC fill:#e1ffe1
+    style Common fill:#fff4e1

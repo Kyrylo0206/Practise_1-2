@@ -1,0 +1,38 @@
+graph TB
+    subgraph "Orders Module"
+        subgraph Endpoints["Endpoints (API Layer)"]
+            GetEndpoint[Get.cs<br/>Get.Request.cs]
+            DeleteEndpoint[Delete.cs<br/>Delete.Request.cs]
+        end
+        
+        subgraph UseCases["UseCases (Application Layer)"]
+            AddOrderCmd[AddOrderCommandHandler<br/>AddOrderCommandValidator]
+            DeleteOrderCmd[DeleteOrderCommandHandler<br/>DeleteOrderCommand]
+        end
+        
+        subgraph Domain["Domain Layer"]
+            OrderAggregate["Order (Aggregate Root)<br/>implements IAggregateRoot"]
+            OrderItem[OrderItem Entity]
+            OrderByIdSpec[OrderByIdSpec<br/>Specification]
+            ViewModels[OrderVm, OrderItemVm<br/>Should not be in Domain]
+        end
+        
+        subgraph Infrastructure["Infrastructure Layer"]
+            OrderDbContext[OrderDbContext]
+            OrderRepository[OrderRepository]
+            OrderConfig[OrderConfiguration<br/>EF Core Mapping]
+            Migrations[Migrations]
+        end
+        
+        Endpoints --> UseCases
+        UseCases --> Domain
+        Domain --> Infrastructure
+        
+        OrderAggregate -.contains.-> OrderItem
+    end
+    
+    style Endpoints fill:#e1f5ff
+    style UseCases fill:#e1ffe1
+    style Domain fill:#fff4e1
+    style Infrastructure fill:#ffe1e1
+    style ViewModels fill:#ffcccc
