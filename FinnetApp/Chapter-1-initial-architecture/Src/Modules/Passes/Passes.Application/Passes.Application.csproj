@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\Passes.Domain\Passes.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="EvolutionaryArchitecture.Passes.Infrastructure" />
+    </ItemGroup>
+
+</Project>

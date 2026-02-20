@@ -1,0 +1,69 @@
+== Module Name
+
+**Passes** (Gym Pass Management)
+
+== Responsibilities
+
+The Passes module is responsible for:
+
+* Registering new gym passes when a contract is signed
+* Storing pass data (customer, validity period)
+* Retrieving all existing passes
+* Marking a pass as expired when its validity period ends
+
+== What This Module Is NOT Responsible For
+
+* Contract preparation or signing — that belongs to the **Contracts** module
+* Creating discount offers for expired passes — that belongs to the **Offers** module
+* Generating analytical reports — that belongs to the **Reports** module
+* Customer identity or authentication
+
+== Data Ownership
+
+The Passes module owns the following data in the `Passes` database schema:
+
+[cols="1,1,2"]
+|===
+| Field | Type | Description
+
+| `Id`
+| Guid
+| Unique pass identifier
+
+| `CustomerId`
+| Guid
+| Reference to the customer who owns the pass
+
+| `From`
+| DateTimeOffset
+| Start date of pass validity
+
+| `To`
+| DateTimeOffset
+| End date of pass validity (updated when expired)
+|===
+
+== Integration Points
+
+* **Inbound**: Listens to `ContractSignedEvent` from the Contracts module to create a new pass
+* **Outbound**: Publishes `PassRegisteredEvent` after a new pass is created
+* **Outbound**: Publishes `PassExpiredEvent` after a pass is marked as expired
+
+== Diagram
+
+[source,text]
+----
+  Contracts Module                Passes Module                  Offers Module
+ ┌──────────────┐    ContractSignedEvent     ┌──────────────┐    PassExpiredEvent    ┌──────────────┐
+ │              │ ────────────────────────▶  │              │ ────────────────────▶  │              │
+ │  Sign        │                            │  Register    │                        │  Prepare     │
+ │  Contract    │                            │  Pass        │                        │  Offer       │
+ │              │                            │              │                        │              │
+ └──────────────┘                            │  Get All     │                        └──────────────┘
+                                             │  Passes      │
+                                             │              │
+                                             │  Mark Pass   │
+                                             │  As Expired  │
+                                             └──────────────┘
+----
+aslo use chat for the diagrams and structured the report 

@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    
+    <PropertyGroup>
+      <UserSecretsId>90cc6bd5-351d-43ab-ba24-41bef6620dc9</UserSecretsId>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Dapper" Version="2.1.66" />
+        <PackageReference Include="FluentValidation" Version="12.0.0" />
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
+        <PackageReference Include="JetBrains.Annotations" Version="2025.2.2" />
+        <PackageReference Include="MediatR" Version="12.5.0" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.1" />
+        <PackageReference Include="Microsoft.OpenApi" Version="2.3.0" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.1" />
+        <PackageReference Update="SonarAnalyzer.CSharp" Version="10.15.0.120848" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="EvolutionaryArchitecture.Fitnet.UnitTests" />
+        <InternalsVisibleTo Include="EvolutionaryArchitecture.Fitnet.IntegrationTests" />
+        <InternalsVisibleTo Include="EvolutionaryArchitecture.Fitnet.ArchitectureTests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="EvolutionaryArchitecture.Fitnet.IntegrationTests" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\Docs\Contracts\Api\Contracts.http">
+        <Link>Contracts.http</Link>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Modules\Passes\Passes.Infrastructure\Passes.Infrastructure.csproj" />
+    </ItemGroup>
+  
+</Project>

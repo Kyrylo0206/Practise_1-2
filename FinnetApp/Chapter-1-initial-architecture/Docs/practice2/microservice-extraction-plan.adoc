@@ -1,0 +1,63 @@
+----
+public interface IPassService
+{
+    Task<Guid> RegisterPassAsync(Guid customerId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct);
+    Task<IReadOnlyCollection<PassDto>> GetAllPassesAsync(CancellationToken ct);
+    Task MarkPassAsExpiredAsync(Guid passId, DateTimeOffset expiredAt, CancellationToken ct);
+}
+----
+
+All other parts of the system interact with the Passes module **only** through `IPassService`.
+Internal classes (`Pass`, `PassRepository`, `PassesPersistence`) are not accessible from outside the module.
+
+== Part B – Future Microservice Extraction
+
+=== API of this module?
+
+* `GET /api/passes` — Retrieve all passes
+* `POST /api/passes` — Register a new pass (replaces the event-driven flow)
+* `PATCH /api/passes/{id}/expire` — Mark a pass as expired
+* `GET /api/passes/{id}` — Get a single pass by ID
+
+=== What data would it own?
+
+* The `Passes` table in the `Passes` schema (currently in shared PostgreSQL)
+* Fields: `Id`, `CustomerId`, `From`, `To`
+* This would move to a **dedicated database** for the Passes service
+
+=== How would other modules talk to it?
+
+* **Contracts → Passes**: Instead of an in-memory `ContractSignedEvent`, the Contracts service would publish a message to a **message broker** (e.g., RabbitMQ, Kafka). The Passes service would subscribe and create a pass.
+* **Passes → Offers**: Instead of an in-memory `PassExpiredEvent`, the Passes service would publish to the message broker. The Offers service would subscribe and create an offer.
+* **Reports**: Instead of reading directly from the Passes DB schema, the Reports service would call the Passes REST API (`GET /api/passes`) or consume events to build its own read model (CQRS projection).
+
+=== Extraction Steps
+
+. Deploy the Passes module as a **standalone ASP.NET Core service**
+. Give it its own **PostgreSQL database**
+. Replace in-memory `IEventBus` with a **message broker** (RabbitMQ/Kafka)
+. Update Contracts module to publish `ContractSignedEvent` to the broker
+. Update Reports module to call the Passes REST API instead of reading the DB directly
+. Add health checks, service discovery, and API gateway routing
+
+=== Diagram
+Before (Modular Monolith):
+┌────────────────────────────────────────────────┐
+│              Fitnet Monolith                   │
+│                                                │
+│  Contracts ──event──▶ Passes ──event──▶ Offers │
+│                          │                     │
+│                     Reports (SQL)              │
+└────────────────────────────────────────────────┘
+
+After (Microservice):
+┌────────────┐     Message Broker     ┌────────────┐     Message Broker     ┌────────────┐
+│ Contracts  │ ──────────────────────▶│   Passes   │ ──────────────────────▶│   Offers   │
+│  Service   │                        │  Service   │                        │  Service   │
+└────────────┘                        └─────┬──────┘                        └────────────┘
+                                            │ REST API
+                                      ┌─────▼──────┐
+                                      │  Reports   │
+                                      │  Service   │
+                                      └────────────┘
+----
