@@ -22,6 +22,9 @@ public static class PassesModule
 
         services.AddScoped<IPassRepository, PassRepository>();
         services.AddScoped<IPassService, PassService>();
+        services.AddScoped<IOutboxRepository, OutboxRepository>();
+        services.AddScoped<ISagaRepository, SagaRepository>();
+        services.AddHostedService<OutboxProcessor>();
 
         return services;
     }
