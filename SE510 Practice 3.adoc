@@ -1,0 +1,262 @@
+= Practice 3 – Data Consistency & Saga Preparation
+
+== Lesson Goals
+
+This practice introduces basic **data management patterns** used when preparing a system for microservice extraction.
+
+By completing this practice, you will learn:
+
+* Why reliable event publishing matters
+* How the *Outbox Pattern* helps prevent data loss
+* What a *Saga* is and how it coordinates multi-step workflows
+* How to design logic that can later move into microservices
+
+This practice stays inside a **modular monolith**.
+No real message brokers or distributed systems are required.
+
+== Grading
+
+Maximum score: *10 points*
+
+*Task 1 – Outbox Pattern (3 points)*::
+
+* Outbox entity/table added
+* Messages saved together with business data
+
+*Task 2 – Outbox Processing (2 points)*::
+
+* Background service or manual processor implemented
+* Messages marked as processed
+
+*Task 3 – Simple Saga Orchestrator (3 points)*::
+
+* Multi-step workflow implemented
+* Saga state persisted
+
+*Task 4 – Retry Safety / Idempotency (2 points)*::
+
+* Safe handling when the same operation runs twice
+* Unique constraint, state check, or idempotency key
+
+== Case
+
+In Practice 2 you extracted one domain module from the monolith and turned the solution into a **modular monolith**.
+
+Now the team wants to prepare this extracted module for *future microservice extraction*.
+
+In microservices, workflows often span multiple steps and may involve multiple services. To make such workflows reliable, we use patterns like:
+
+* **Outbox Pattern** (reliable publishing)
+* **Saga Pattern** (workflow coordination with state)
+
+In this practice you will implement a *simplified* Outbox + Saga workflow inside the modular monolith created in Practice 2.
+
+== Starting Codebase
+
+Use *your solution from Practice 2* (the branch where you extracted a module).
+
+* Branch name from previous practice: `practice/2-modules-separation`
+* Or your own equivalent branch containing:
+
+  * `src/Modules/<ModuleName>/...`
+  * Clean Architecture layering for the module
+
+IMPORTANT:
+Do *not* start from `Chapter-1-initial-architecture/` for this practice.
+
+== Preconditions
+
+1. Clone the repository (if not already cloned):
+
+## [source,bash]
+
+2. Checkout your Practice 2 branch:
+
+3. Confirm you have an extracted module:
+
+* `src/Modules/<ModuleName>/<ModuleName>.Domain`
+* `src/Modules/<ModuleName>/<ModuleName>.Application`
+* `src/Modules/<ModuleName>/<ModuleName>.Infrastructure`
+* (optional) `src/Modules/<ModuleName>/<ModuleName>.Presentation`
+
+4. Pick a simple workflow inside your extracted module.
+
+Example ideas (choose one):
+
+* Accounts: `OpenAccount` -> `AccountOpened`
+* Transfers: `CreateTransfer` -> `TransferCreated`
+* Notifications: `ScheduleNotification` -> `NotificationScheduled`
+
+== Practice Overview
+
+You will implement a simplified workflow:
+
+1. Start an operation inside the extracted module (example: `CreateTransfer`).
+2. Save the business record.
+3. Add an Outbox message inside the same transaction.
+4. Process the Outbox.
+5. Drive a simple Saga that moves through states.
+
+No external services or queues are required.
+
+== Task 1 – Implement the Outbox (3 points)
+
+Create a simple Outbox entity *inside your extracted module*.
+
+Recommended location:
+
+* `<ModuleName>.Infrastructure` (EF entity + persistence)
+* Interface contract in `<ModuleName>.Application` if needed
+
+Example fields:
+
+* Id (Guid)
+* Type (string)
+* Payload (string/json)
+* CreatedAt (DateTime)
+* ProcessedAt (DateTime? nullable)
+
+Add:
+
+* EF entity
+* DbSet in the module DbContext (or shared DbContext if you still have one)
+* Migration (if you use migrations)
+
+=== Requirement
+
+When creating your main business object (for example `Transfer`):
+
+* Save the business entity
+* Save an Outbox message
+
+Both must happen in the same transaction / same `SaveChanges()` call.
+
+=== Hint
+
+The Outbox message can be very small:
+
+## [source,json]
+
+{
+"event": "TransferCreated",
+"id": "<transfer-id>"
+}
+-
+
+== Task 2 – Outbox Processor (2 points)
+
+Create a simple processor that:
+
+1. Reads unprocessed Outbox messages.
+2. Logs them or sends them to a fake bus.
+3. Sets `ProcessedAt`.
+
+You can implement it as one of these:
+
+* `BackgroundService` registered in the host (recommended)
+* A manual Application Service method (acceptable and faster for juniors)
+
+No real messaging infrastructure is needed.
+
+=== Acceptance Rule
+
+Processing the Outbox twice should not process the same message twice (because `ProcessedAt` is set).
+
+== Task 3 – Simple Saga Orchestrator (3 points)
+
+Implement a small Saga that coordinates a workflow.
+
+Example flow (adapt to your module):
+
+1. OperationStarted
+2. StepCompleted
+3. OperationCompleted (or Failed)
+
+Create a Saga state entity (persisted in DB):
+
+* SagaId (Guid)
+* CorrelationId (Guid or string, e.g., TransferId)
+* Status (Started / Completed / Failed)
+* CreatedAt
+* UpdatedAt
+
+=== Minimal Requirements
+
+* When the workflow starts, create the Saga state with `Started`.
+* When the Outbox event is processed, update Saga state to `Completed` (or `Failed`).
+
+You do not need multi-step complexity. One step + finalization is enough.
+
+== Task 4 – Retry Safety / Idempotency (2 points)
+
+Distributed systems may retry operations.
+
+Add *one* safety mechanism:
+
+* Unique constraint (recommended): `UNIQUE(Type, CorrelationId)` or unique `SagaId`
+* Status check: “if Completed, do nothing”
+* Idempotency key: store a request key and return existing result
+
+=== Example Requirement
+
+If the Saga is already `Completed`, processing the same Outbox message again must NOT:
+
+* create a second Saga record
+* create a duplicate business entity
+* change the final state incorrectly
+
+== Minimal Diagram (Recommended)
+
+## [plantuml]
+
+@startuml
+participant Client
+participant "<ModuleName>.Application" as App
+database DB
+participant OutboxProcessor as OP
+
+Client -> App : Start Workflow (e.g., CreateTransfer)
+App -> DB : Save Entity + Outbox + Saga(Started)
+
+OP -> DB : Read Outbox where ProcessedAt is null
+OP -> App : Handle Outbox Message
+App -> DB : Update Saga(Completed/Failed)
+OP -> DB : Mark Outbox as processed
+@enduml
+-------
+
+== Acceptance Criteria
+
+* [ ] Built on top of Practice 2 modular monolith branch
+* [ ] Outbox entity/table exists inside extracted module
+* [ ] Business action writes Outbox record in same transaction
+* [ ] Processor reads and marks messages as processed
+* [ ] Saga state is saved and updated
+* [ ] Safe retry behavior implemented
+* [ ] Solution builds successfully
+
+== Submission
+
+Create a new branch from your Practice 2 branch:
+
+## [source,bash]
+
+## git checkout -b practice/3-saga-outbox
+
+Include:
+
+* Outbox entity + persistence
+* Saga state entity + persistence
+* Processor implementation
+* Updated Application service / workflow code
+
+Deliverables (files):
+
+* Code changes in your module
+
+== Hints
+
+* Logging instead of real messaging is enough.
+* Saga does not need to be generic or reusable.
+* Use enums for Saga state.
+* If you feel stuck: implement *Outbox + one-step saga finalization* first, then add retry safety.
